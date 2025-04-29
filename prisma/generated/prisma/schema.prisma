@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PatientStatus {
+  CRITICAL
+  WARNING
+  STABLE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Doctor {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  specialty String
+  avatarUrl String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  patients  Patient[]
+}
+
+model Patient {
+  id               Int                @id @default(autoincrement())
+  name             String
+  age              Int
+  gender           Gender
+  room             String
+  status           PatientStatus
+  medicalRecord    String             @unique
+  doctorId         Int
+  doctor           Doctor             @relation(fields: [doctorId], references: [id])
+  vitalSigns       VitalSign?
+  vitalSignHistory VitalSignHistory[]
+  thresholds       ThresholdSettings?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}
+
+model VitalSign {
+  id          Int      @id @default(autoincrement())
+  spo2        Int
+  bpm         Int
+  temperature Float
+  patientId   Int      @unique
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model ThresholdSettings {
+  id        Int      @id @default(autoincrement())
+  spo2Min   Int
+  spo2Max   Int
+  bpmMin    Int
+  bpmMax    Int
+  tempMin   Float
+  tempMax   Float
+  patientId Int      @unique
+  patient   Patient  @relation(fields: [patientId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model VitalSignHistory {
+  id          Int      @id @default(autoincrement())
+  spo2        Int
+  bpm         Int
+  temperature Float
+  patientId   Int
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  createdAt   DateTime @default(now())
+}
