@@ -125,6 +125,7 @@ exports.Prisma.DoctorScalarFieldEnum = {
   name: 'name',
   email: 'email',
   specialty: 'specialty',
+  password: 'password',
   avatarUrl: 'avatarUrl',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

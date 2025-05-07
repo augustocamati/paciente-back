@@ -23,10 +23,10 @@ app.get("/doctors", async (req, res) => {
 
 // server.js
 app.post("/doctors", async (req, res) => {
-  const { name, email, specialty, avatarUrl } = req.body
+  const { name, email, specialty, avatarUrl, password } = req.body
 
   // Validação simples
-  if (!name || !email || !specialty) {
+  if (!name || !email || !specialty || password) {
     return res.status(400).json({ error: "Campos obrigatórios faltando" })
   }
 
@@ -35,6 +35,7 @@ app.post("/doctors", async (req, res) => {
       data: {
         name,
         email,
+        password,
         specialty,
         avatarUrl: avatarUrl || null,
       },
