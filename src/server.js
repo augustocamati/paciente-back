@@ -23,10 +23,10 @@ app.get("/doctors", async (req, res) => {
 
 // server.js
 app.post("/doctors", async (req, res) => {
-  const { name, email, specialty, avatarUrl } = req.body
+  const { name, email, specialty, avatarUrl, password } = req.body
 
   // Validação simples
-  if (!name || !email || !specialty) {
+  if (!name || !email || !specialty || password) {
     return res.status(400).json({ error: "Campos obrigatórios faltando" })
   }
 
@@ -35,6 +35,7 @@ app.post("/doctors", async (req, res) => {
       data: {
         name,
         email,
+        password,
         specialty,
         avatarUrl: avatarUrl || null,
       },
@@ -62,6 +63,54 @@ app.get("/patients", async (req, res) => {
     res.json(patients)
   } catch (error) {
     res.status(500).json({ error: "Erro ao buscar pacientes" })
+  }
+})
+
+// Rota de login para médicos
+app.post("/doctors/login", async (req, res) => {
+  const { email, password } = req.body
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email e senha são obrigatórios" })
+  }
+
+  try {
+    const doctor = await prisma.doctor.findUnique({
+      where: { email },
+    })
+
+    if (!doctor || doctor.password !== password) {
+      return res.status(401).json({ error: "Credenciais inválidas" })
+    }
+
+    res.json({ message: "Login bem-sucedido", doctor })
+  } catch (error) {
+    console.log("error", error)
+    res.status(500).json({ error: "Erro ao realizar login" })
+  }
+})
+
+// Rota de login para pacientes
+app.post("/patients/login", async (req, res) => {
+  const { medicalRecord } = req.body
+
+  if (!medicalRecord) {
+    return res.status(400).json({ error: "Prontuário são obrigatórios" })
+  }
+
+  try {
+    const patient = await prisma.patient.findUnique({
+      where: { medicalRecord },
+    })
+
+    if (!patient) {
+      return res.status(401).json({ error: "Credenciais inválidas" })
+    }
+
+    res.json({ message: "Login bem-sucedido", patient })
+  } catch (error) {
+    console.log("error", error)
+    res.status(500).json({ error: "Erro ao realizar login" })
   }
 })
 
@@ -100,27 +149,27 @@ app.get("/patients/:id/thresholds", async (req, res) => {
       thresholds.bpm = {
         min: thresholds.bpmMin,
         max: thresholds.bpmMax,
-      };
+      }
       thresholds.spo2 = {
         min: thresholds.spo2Min,
         max: thresholds.spo2Max,
-      };
+      }
       thresholds.temperature = {
         min: thresholds.tempMin,
         max: thresholds.tempMax,
-      };
+      }
 
-      delete thresholds.bpmMin;
-      delete thresholds.bpmMax;
-      delete thresholds.spo2Min;
-      delete thresholds.spo2Max;
-      delete thresholds.tempMin;
-      delete thresholds.tempMax;
+      delete thresholds.bpmMin
+      delete thresholds.bpmMax
+      delete thresholds.spo2Min
+      delete thresholds.spo2Max
+      delete thresholds.tempMin
+      delete thresholds.tempMax
     }
-    console.log('thresholds', thresholds)
+    console.log("thresholds", thresholds)
     res.json(thresholds)
   } catch (error) {
-    console.log('error', error)
+    console.log("error", error)
     res.status(500).json({ error: "Erro ao buscar limites" })
   }
 })
@@ -133,7 +182,7 @@ app.post("/patients/:id/vitals", async (req, res) => {
   console.log("bpm", bpm)
   console.log("temperature", temperature)
   console.log("body", req.body)
-  
+
   try {
     // Transação para atualizar sinais e criar histórico
     const result = await prisma.$transaction([
@@ -148,7 +197,6 @@ app.post("/patients/:id/vitals", async (req, res) => {
         },
       }),
 
-      
       prisma.vitalSignHistory.create({
         data: {
           spo2,
@@ -161,7 +209,7 @@ app.post("/patients/:id/vitals", async (req, res) => {
 
     res.json(result[0]) // Retorna os sinais atualizados
   } catch (error) {
-    console.log('error', error)
+    console.log("error", error)
     res.status(400).json({ error: "Erro ao atualizar sinais" })
   }
 })
@@ -169,11 +217,10 @@ app.post("/patients/:id/vitals", async (req, res) => {
 // Rotas Thresholds
 app.put("/patients/:id/thresholds", async (req, res) => {
   const { id } = req.params
-  const { spo2,bpm,temperature } = req.body
+  const { spo2, bpm, temperature } = req.body
 
   // return res.json({ message: "Thresholds updated" })
   try {
- 
     const thresholds = await prisma.thresholdSettings.upsert({
       where: { patientId: Number(id) },
       update: {
@@ -197,31 +244,8 @@ app.put("/patients/:id/thresholds", async (req, res) => {
     })
     res.json(thresholds)
   } catch (error) {
-    console.log('error', error)
+    console.log("error", error)
     res.status(400).json({ error: "Erro ao atualizar limites" })
-  }
-})
-
-app.delete("/patients/:id", async (req, res) => {
-  const { id } = req.params
-
-  try {
-    await prisma.$transaction([
-      prisma.vitalSign.deleteMany({
-        where: { patientId: Number(id) },
-      }),
-      prisma.thresholdSettings.deleteMany({
-        where: { patientId: Number(id) },
-      }),
-      prisma.patient.delete({
-        where: { id: Number(id) },
-      }),
-    ]);
-
-    res.json({ message: "Paciente deletado com sucesso" });
-  } catch (error) {
-    console.log('error', error)
-    res.status(400).json({ error: "Erro ao deletar paciente", message: error.message })
   }
 })
 
@@ -234,13 +258,13 @@ app.get("/patients/:id/history", async (req, res) => {
       orderBy: { createdAt: "desc" },
     })
 
-    const history2= history.map((item) => ({
+    const history2 = history.map((item) => ({
       ...item,
       temperature: parseFloat(item.temperature.toString()).toFixed(1), // Formata a data para ISO string
     }))
     res.json(history2)
   } catch (error) {
-    console.log('error', error)
+    console.log("error", error)
     res.status(500).json({ error: "Erro ao buscar histórico" })
   }
 })
