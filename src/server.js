@@ -202,6 +202,29 @@ app.put("/patients/:id/thresholds", async (req, res) => {
   }
 })
 
+app.delete("/patients/:id", async (req, res) => {
+  const { id } = req.params
+
+  try {
+    await prisma.$transaction([
+      prisma.vitalSign.deleteMany({
+        where: { patientId: Number(id) },
+      }),
+      prisma.thresholdSettings.deleteMany({
+        where: { patientId: Number(id) },
+      }),
+      prisma.patient.delete({
+        where: { id: Number(id) },
+      }),
+    ]);
+
+    res.json({ message: "Paciente deletado com sucesso" });
+  } catch (error) {
+    console.log('error', error)
+    res.status(400).json({ error: "Erro ao deletar paciente", message: error.message })
+  }
+})
+
 // Rotas Histórico
 app.get("/patients/:id/history", async (req, res) => {
   const { id } = req.params
